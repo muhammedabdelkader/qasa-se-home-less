@@ -7,7 +7,8 @@ import json
 
 """
 class find_home_in_qasa:
-    def _init_(self, my_token):
+    def __init__(self, my_token,local_storage):
+        self.storage_file = local_storage
         self.base_url = 'https://api.qasa.se/graphql' 
         self.my_token = my_token
         self.headers = {'Access-Token':my_token,'content-type':'application/json','Referer':'https://bostad.blocket.se','User-Agent':'Mozilla/5.0','Origin':'https://bostad.blocket.se'}
@@ -27,9 +28,20 @@ class find_home_in_qasa:
         response = requests.post(url=self.base_url, headers=self.headers, json=query)
         results = (response.json()['data']['homeSearchCoords']['filterHomesRaw'])
         results = json.loads(results)
-
+        houses_db = {}
+        with open(self.storage_file, 'r') as local_storage:
+            houses_db = json.loads(local_storage.read())
         for house in results:
-            for key in house:
-                
-        break
+            if not house['id'] in houses_db:
+                houses_db[house['id']]={'house_lat': house['latitude'],'house_lang': house['longitude'] ,'house_rent' : house['cost'] + house['tenant_base_fee'],'house_currency': house['currency'] }
+
+        with open(self.storage_file,'w') as local_storage:
+            local_storage.write(json.dumps(houses_db))
+
+            
+             
+        
+T = find_home_in_qasa("dd",local_storage='J.json')
+T.find_my_home()
+
 
