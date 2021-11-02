@@ -42,7 +42,6 @@ class find_home_in_qasa:
             counter_offer is same cost 
             message body is the text we keep it 
         """
-
         # End Posting if message body is None
         if not self.messageBody:
             return
@@ -165,7 +164,7 @@ class find_home_in_qasa:
              
         
 T = find_home_in_qasa("dd",writeToFile=True,local_storage='J.json')
-print("dsddsds")
+
 print(T.findMyHome())
 
 
