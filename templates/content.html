@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+    <h1>Movies</h1>
+    <p>
+      {% for movie in data['movies'] %} {%if movie['title']!="Terminator" %}
+      {{ movie['title'] }}
+      {% endif %} {% endfor %}
+    </p>
+{% endblock %}
