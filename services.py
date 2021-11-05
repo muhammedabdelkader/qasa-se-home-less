@@ -2,14 +2,16 @@ import requests
 import json
 from datetime import datetime
 import logging
-
+from util import util
 
 """
 
 """
 class find_home_in_qasa:
     def __init__(self, my_token,local_storage,writeToFile=False):
-        self.updateVersionFileName = "lastUpdatedVersionAt.cnf"
+        self.util = util()
+        self.baseDataLocaion = "data/"
+        self.updateVersionFileName = f"{self.baseDataLocaion }lastUpdatedVersionAt.cnf"
         # Logging setting up params
         logging.basicConfig(format='%(asctime)s [%(levelname)-8s] %(message)s')
         self.logger = logging.getLogger()
@@ -86,6 +88,18 @@ class find_home_in_qasa:
     def queryHomesProtocol(self,region='se/stockholms_län'):
         houses_db = self.findMyHome(region)
 
+    def runSearchFor(self):
+        ##TODO : Search Critria for each accountIDentifier
+        ##TODO: Data base graphQL
+        # Default Search is running, Later run it inside for loop
+        allSearchResults = self.findMyHome()
+        for accountIDentifier in self.util.loadTokenz().keys():
+            for post in allSearchResults:
+                for item in allSearchResults[post]:
+                    print(self.util.submitOfferLinkGeneration(accountIDentifier,item,allSearchResults[post][item]['Price']))
+
+
+
 
     def findMyHome(self,region='se/stockholms_län',limit=25,monthlyRent=10000,minRoomCount=1,minSquareMeters=15,isShared=False,isSenior=False,isStudent=False,type='apartment'):
         keyType = "homeSearch"
@@ -157,7 +171,7 @@ class find_home_in_qasa:
         with open(self.updateVersionFileName, 'w') as lastUpdate:
             lastUpdate.write(list(houses_db.keys())[0])
         if self.writeToFile:
-            self.writeJsonToFile(fileFullPath=keyType,jsonData=houses_db)
+            self.writeJsonToFile(fileFullPath=f"{self.baseDataLocaion }{keyType}",jsonData=houses_db)
         return houses_db
 
             
@@ -165,6 +179,6 @@ class find_home_in_qasa:
         
 T = find_home_in_qasa("dd",writeToFile=True,local_storage='J.json')
 
-print(T.findMyHome())
+print(T.runSearchFor())
 
 
