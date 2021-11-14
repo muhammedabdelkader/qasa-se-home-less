@@ -13,7 +13,10 @@ from email.mime.multipart import MIMEMultipart
 
 class util:
 
-    def __init__(self,tokenLength=0):
+    def __init__(self,tokenLength=0,mhostname='localhost',mport=8080,mporotocol='http://'):
+        self.mhostname = mhostname
+        self.mport = mport
+        self.mporotocol = mporotocol
         # Logging setting up params
         logging.basicConfig(format='%(asctime)s [%(levelname)-8s] %(message)s')
         self.logger = logging.getLogger()
@@ -31,6 +34,7 @@ class util:
         self.token = None
         self.tokenLength = tokenLength | 64
         self.tokenzStorage = "data/tokenz.csv"
+        self.openIdStorage = "data/openId.csv"
 
         # Service Settings
         self.serviceName = None
@@ -62,12 +66,19 @@ class util:
 
     def setToken(self):
         self.token = secrets.token_urlsafe(self.tokenLength)
+
     def getToken(self):
         return self.token
 
     def loadTokenz(self):
         tokens = None
-        with open(self.tokenzStorage,'r+') as alltokens:
+        with open(self.tokenzStorage, 'r+') as alltokens:
+            tokens = json.load(alltokens)
+        return tokens
+
+    def loadOpenIds(self):
+        tokens = None
+        with open(self.openIdStorage,'r+') as alltokens:
             tokens = json.load(alltokens)
         return tokens
 
@@ -78,6 +89,23 @@ class util:
                 return True
         return False
 
+    def addOpenId(self,openId,accountIdentifier,assumeToken):
+        if self.verifyToken(assumeToken=assumeToken,accountIdentifier=accountIdentifier):
+            openIds = self.loadOpenIds()
+            openIds[accountIdentifier] = openId
+            with open() as openIdFile:
+                json.dump(openIds,openIdFile)
+        return f"{accountIdentifier} can bid now "
+
+    def revokeToken(self,userAccountIdentifier,urToken):
+        tokenz = self.loadTokenz()
+        if userAccountIdentifier in tokenz and tokenz[userAccountIdentifier]==urToken:
+            tokenz.pop(userAccountIdentifier)
+            with open(self.tokenzStorage,'w') as myToken:
+                json.dump(tokenz,myToken)
+        return f"{userAccountIdentifier} removed from our list "
+
+
     def writeToken(self,userAccountIdentifier):
         tokenz = self.loadTokenz()
         if not userAccountIdentifier in tokenz:
@@ -86,12 +114,15 @@ class util:
             with open(self.tokenzStorage,'w') as myToken:
                 json.dump(tokenz,myToken)
 
+        return tokenz[userAccountIdentifier]
+
+
     def submitOfferLinkGeneration(self, accountIdentifier, homeAddId , homeCounterOffer):
         submitToken = (self.loadTokenz()).get(accountIdentifier,0)
         if submitToken:
-            submitLink = f"?email={accountIdentifier}&token={submitToken}&homeId={homeAddId}&homePriceOffer={homeCounterOffer}"
+            submitLink = f"{self.mporotocol}{self.mhostname}:{self.mport}/bid/{accountIdentifier}/{submitToken}/{homeAddId}/{homeCounterOffer}"
             return submitLink
-        return 0
+        return -1
 
     def sendHomeList(self,event, context,data,templateName):
         env = Environment(

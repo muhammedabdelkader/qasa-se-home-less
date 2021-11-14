@@ -5,11 +5,12 @@ import logging
 from util import util
 
 """
-
+Qasa GraphQL class  
 """
 class find_home_in_qasa:
-    def __init__(self, my_token,local_storage,writeToFile=False):
+    def __init__(self, my_token,local_storage,accountIDentifier,writeToFile=False):
         self.util = util()
+        self.accountIDentifier=accountIDentifier
         self.baseDataLocaion = "data/"
         self.updateVersionFileName = f"{self.baseDataLocaion }lastUpdatedVersionAt.cnf"
         # Logging setting up params
@@ -37,19 +38,24 @@ class find_home_in_qasa:
     {"operationName":"CreateHomeApplication","variables":{"home_id":"323122","counter_offer":18500,"message":"dsds"},"query":"mutation CreateHomeApplication($home_id: ID!, $counter_offer: Int!, $start_optimal: DateTime, $end_optimal: DateTime, $message: String) {\n  createTenantHomeApplication(\n    input: {homeId: $home_id, counterOffer: $counter_offer, startOptimal: $start_optimal, endOptimal: $end_optimal, message: $message}\n  ) {\n    homeApplication {\n      message\n      endOptimal\n      endUfn\n      id\n      startOptimal\n      status\n      createdAt\n      currency\n      matchInterest\n      origin\n      tenant {\n        uid\n        landlord\n        tenant\n        __typename\n      }\n      home {\n        id\n        __typename\n      }\n      __typename\n    }\n    errors {\n      field\n      codes\n      __typename\n    }\n    __typename\n  }\n}\n"}
     """
 
-    def postMessage(self, home_id, counter_offer):
+    def postMessage(self, home_id, counter_offer,accountOpenId=0):
         """
             @TODO 
             Shall be called out by Link /sendMessageTo = home_id 
             counter_offer is same cost 
             message body is the text we keep it 
         """
-        # End Posting if message body is None
-        if not self.messageBody:
-            return
-        query = {"operationName":"CreateHomeApplication","variables":{"home_id":f"{home_id}","counter_offer":counter_offer,"message":f"{self.messageBody}"},"query":"mutation CreateHomeApplication($home_id: ID!, $counter_offer: Int!, $start_optimal: DateTime, $end_optimal: DateTime, $message: String) {  createTenantHomeApplication(    input: {homeId: $home_id, counterOffer: $counter_offer, startOptimal: $start_optimal, endOptimal: $end_optimal, message: $message}  ) {    homeApplication {      message      endOptimal      endUfn      id      startOptimal      status      createdAt      currency      matchInterest      origin      tenant {        uid        landlord        tenant        __typename      }      home {        id        __typename      }      __typename    }    errors {      field      codes      __typename    }  __typename  }}"}
-        response = requests.post(url=self.base_url, headers=self.headers, json=query)
-        error = response.json()['data']['createTenantHomeApplication']['error']
+        if accountOpenId:
+            # End Posting if message body is None
+            if not self.messageBody:
+                return
+
+            self.headers['Access-Token']= accountOpenId
+            query = {"operationName":"CreateHomeApplication","variables":{"home_id":f"{home_id}","counter_offer":counter_offer,"message":f"{self.messageBody}"},"query":"mutation CreateHomeApplication($home_id: ID!, $counter_offer: Int!, $start_optimal: DateTime, $end_optimal: DateTime, $message: String) {  createTenantHomeApplication(    input: {homeId: $home_id, counterOffer: $counter_offer, startOptimal: $start_optimal, endOptimal: $end_optimal, message: $message}  ) {    homeApplication {      message      endOptimal      endUfn      id      startOptimal      status      createdAt      currency      matchInterest      origin      tenant {        uid        landlord        tenant        __typename      }      home {        id        __typename      }      __typename    }    errors {      field      codes      __typename    }  __typename  }}"}
+            response = requests.post(url=self.base_url, headers=self.headers, json=query)
+            error = response.json()['data']['createTenantHomeApplication']['error']
+        else:
+            error = f"Check your inbox"
         return home_id,error
 
     def send_email(self,message):
@@ -93,12 +99,12 @@ class find_home_in_qasa:
         ##TODO: Data base graphQL
         # Default Search is running, Later run it inside for loop
         allSearchResults = self.findMyHome()
-        for accountIDentifier in self.util.loadTokenz().keys():
-            for post in allSearchResults:
-                for item in allSearchResults[post]:
-                    print(self.util.submitOfferLinkGeneration(accountIDentifier,item,allSearchResults[post][item]['Price']))
-
-
+        #for accountIDentifier in self.util.loadTokenz().keys():
+        for post in allSearchResults:
+            for item in allSearchResults[post]:
+                itemInQ = allSearchResults[post][item]
+                offerThemHyperLink = self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
+                print(offerThemHyperLink)
 
 
     def findMyHome(self,region='se/stockholms_län',limit=25,monthlyRent=10000,minRoomCount=1,minSquareMeters=15,isShared=False,isSenior=False,isStudent=False,type='apartment'):
@@ -174,11 +180,6 @@ class find_home_in_qasa:
             self.writeJsonToFile(fileFullPath=f"{self.baseDataLocaion }{keyType}",jsonData=houses_db)
         return houses_db
 
-            
-             
-        
-T = find_home_in_qasa("dd",writeToFile=True,local_storage='J.json')
 
-print(T.runSearchFor())
 
 
