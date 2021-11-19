@@ -3,7 +3,10 @@ import json
 from datetime import datetime
 import logging
 from util import util
-
+import os
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import smtplib
 """
 Qasa GraphQL class  
 """
@@ -67,26 +70,27 @@ class find_home_in_qasa:
         """
         print("send me message")
 
-    # Copied from : https://dev.to/carola99/send-an-html-email-template-with-python-and-jinja2-1hd0
+    # Copied from : https://gist.githubusercontent.com/nickoala/569a9d191d088d82a5ef5c03c0690a02/raw/3ab77b718e17ef61cca5f6b1419f8c81c4008e7f/1_sendtext.py
 
-    def send_mail(self,bodyContent):
-        to_email = 'to@gmail.com'
-        from_email = 'from@gmail.com'
-        subject = 'This is a email from Python with a movies list!'
-        message = MIMEMultipart()
-        message['Subject'] = subject
-        message['From'] = from_email
-        message['To'] = to_email
+    def sendEmailToday(self,recipients=[],subject='Dry Test',body='Hi!'):
+        if len(recipients):
+            smtp_ssl_host = 'smtp.gmail.com'  # smtp.mail.yahoo.com
+            smtp_ssl_port = 465
+            username = os.environ.get('emailUsername')
+            password = os.environ.get('emailPassword')
+            sender = 'admin@redactive.io'
+            targets = recipients
+            msg = MIMEMultipart('alternative')
+            msgBody= MIMEText(body, 'html')
+            msg.attach(msgBody)
+            msg['Subject'] = subject
+            msg['From'] = sender
+            msg['To'] = ', '.join(targets)
+            server = smtplib.SMTP_SSL(smtp_ssl_host, smtp_ssl_port)
+            server.login(username, password)
+            server.sendmail(sender, targets, msg.as_string())
+            server.quit()
 
-        message.attach(MIMEText(bodyContent, "html"))
-        msgBody = message.as_string()
-
-        server = SMTP('smtp.gmail.com', 587)
-        server.starttls()
-        server.login(from_email, 'your password')
-        server.sendmail(from_email, to_email, msgBody)
-
-        server.quit()
 
     def writeJsonToFile(self, fileFullPath, jsonData):
             with open(self.prefixFileName + fileFullPath + self.postfixFileName, "w+") as csFile:
@@ -103,15 +107,18 @@ class find_home_in_qasa:
         for post in allSearchResults:
             for item in allSearchResults[post]:
                 itemInQ = allSearchResults[post][item]
-                offerThemHyperLink = self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
-                print(offerThemHyperLink)
+                #offerThemHyperLink = self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
+                itemInQ['offerThemHyperLink'] = self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
+        return allSearchResults
 
 
-    def findMyHome(self,region='se/stockholms_län',limit=25,monthlyRent=10000,minRoomCount=1,minSquareMeters=15,isShared=False,isSenior=False,isStudent=False,type='apartment'):
+
+    def findMyHome(self,region='se/stockholms_län',limit=100,monthlyRent=10000,minRoomCount=1,minSquareMeters=15,isShared=False,isSenior=False,isStudent=False,type='apartment'):
         keyType = "homeSearch"
         startingOffset = 0
         houses_db = {}
         cnfControl = None
+        runnable = True
         with open(self.updateVersionFileName,'r') as configControl:
             cnfControl = configControl.read()
         while True:
@@ -142,11 +149,10 @@ class find_home_in_qasa:
             response = requests.post(url=self.base_url, headers=self.headers, json=query)
             results = (response.json()['data']['homeSearch']['filterHomesOffset'])
             totalCount = results['totalCount']
-            # Next
-            startingOffset+=limit
+
             # Load data
             results = results['nodes']
-            self.logger.log(self.level, f"Processing {startingOffset + limit}/{totalCount}")
+
             for house in results:
                 #Dont get records because there is no news
                 if house['duration']['updatedAt'] <= cnfControl:
@@ -168,18 +174,24 @@ class find_home_in_qasa:
                         "images":[]
                     }
                     for item in house['uploads']:
-                      houses_db[house['duration']['updatedAt']][house['id']]["images"].append(f"<img src='{item['url']}'/>")
+                        houses_db[house['duration']['updatedAt']][house['id']]["images"].append(item['url'])
 
+            self.logger.log(self.level, f"Processing {startingOffset}/{totalCount}")
+            # Next
+            startingOffset += limit
             # Exit Loop
-            if totalCount < startingOffset:
+            if startingOffset > totalCount:
                 break
-        houses_db = dict(sorted(houses_db.items(),reverse=True))
-        with open(self.updateVersionFileName, 'w') as lastUpdate:
-            lastUpdate.write(list(houses_db.keys())[0])
-        if self.writeToFile:
-            self.writeJsonToFile(fileFullPath=f"{self.baseDataLocaion }{keyType}",jsonData=houses_db)
-        return houses_db
 
+        if len(houses_db):
+            houses_db = dict(sorted(houses_db.items(),reverse=True))
+            with open(self.updateVersionFileName, 'w') as lastUpdate:
+                lastUpdate.write(list(houses_db.keys())[0])
+
+            if self.writeToFile:
+                self.writeJsonToFile(fileFullPath=f"{self.baseDataLocaion }{keyType}",jsonData=houses_db)
+            return houses_db
+        return []
 
 
 

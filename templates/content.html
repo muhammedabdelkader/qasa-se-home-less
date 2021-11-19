@@ -1,9 +1,39 @@
 {% extends "base.html" %}
 {% block content %}
-    <h1>Movies</h1>
+    <h1>Results</h1>
     <p>
-      {% for movie in data['movies'] %} {%if movie['title']!="Terminator" %}
-      {{ movie['title'] }}
-      {% endif %} {% endfor %}
+    <table>
+      {% for post in allSearchResults %}
+
+         {% for item in allSearchResults[post] %}
+        <TR>
+
+
+ <tr>
+    <td>Price: </td><td>{{allSearchResults[post][item]['Price'] }} </td>
+     <td>NumberOfRooms: </td> <td> {{ allSearchResults[post][item]['NumberOfRooms'] }}</td>
+   </tr> <tr>
+     <td>AreaSpaceSquare: </td> <td>   {{ allSearchResults[post][item]['AreaSpaceSquare'] }}</td>
+    <td>Location: </td> <td>{{ allSearchResults[post][item]['location'] }}</td>
+     </tr> <tr>
+     <td>Ad Link: </td>   <td> <a href="{{ allSearchResults[post][item]['adLink'] }}">Ad Link</a></td>
+     <td>updatedAt: </td>    <td>  {{ allSearchResults[post][item]['updatedAt'] }}</td>
+     </tr> <tr>
+      <td>EndOfContract: </td>  <td> {{ allSearchResults[post][item]['EndOfContract'] }}</td>
+     <td>endOptimal: </td>   <td> {{ allSearchResults[post][item]['endOptimal'] }}</td>
+        </tr> <tr>
+    <td>Images: </td>
+         <td>
+        {% for image in allSearchResults[post][item]['images'] %}
+         {{image}} <br/>
+        {% endfor %}
+        </td>
+    </tr>
+
+    </TR>
+        {% endfor %}
+
+        {% endfor %}
+</table>
     </p>
 {% endblock %}
