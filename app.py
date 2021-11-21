@@ -25,13 +25,13 @@ import os
 # token , home id , counter offer, message template "string"
 
 
-pathList =['revoke','subscribe','sendMeAds']
+pathList =['revoke','subscribe','sendMeAds','verifyMe']
 app = Flask(__name__,template_folder="templates")
 
-myutil = util(tokenLength=128,mhostname=os.environ.get('myhostname'),mport=8080)
+myutil = util(tokenLength=128,mhostname="localhost",mport=8080)
 regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
 
-
+allowedIPAddresses = ['213.64.53.2','178.128.193.220']
 # Stop Missing Up
 ## TODO: Add captach
 ## TODO: Add APP secret key
@@ -43,6 +43,13 @@ def before():
     sentences_count, words_count, paragraph = generate_paragraph()
     method = request.method
     path = request.path
+    """
+    ## TODO: Enable app FW 
+    if not request.remote_addr in allowedIPAddresses:
+        return paragraph 
+    
+    """
+
     if method == "GET" and path.split("/")[1] in pathList:
         email = path.split("/")[2]
         ## Vanila trap
@@ -65,8 +72,10 @@ def registerInService(email):
 
     return "sent you a link"
 
-@app.route('/verifyMe/<string:email>/<string:token>/openId',methods=['GET'])
-def verifyMe(email,token,openId):
+@app.route('/verifyMe/<string:email>/<string:token>',methods=['GET'])
+def verifyMe(email,token):
+    openId = request
+    print(openId)
     myutil.addOpenId(openId=openId,accountIdentifier=email,assumeToken=token)
     return "sent you a link"
 
@@ -86,7 +95,7 @@ def doSearching(email,token):
 def doBid(email,token,homeId,offer):
     if myutil.verifyToken(accountIdentifier=email,assumeToken=token):
         myQasa = find_home_in_qasa(my_token=token,local_storage=f"{email}.json",accountIDentifier=email)
-
+        myQasa.postMessage(homeId=homeId,counter_offer=offer,accountOpenId=token)
     return f"{str(homeId).encode('UTF-8')} , {str(offer).encode('UTF-8')}"
 
 

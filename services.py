@@ -109,6 +109,8 @@ class find_home_in_qasa:
                 itemInQ = allSearchResults[post][item]
                 #offerThemHyperLink = self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
                 itemInQ['offerThemHyperLink'] = self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
+
+
         return allSearchResults
 
 

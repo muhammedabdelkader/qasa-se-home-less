@@ -93,7 +93,7 @@ class util:
         if self.verifyToken(assumeToken=assumeToken,accountIdentifier=accountIdentifier):
             openIds = self.loadOpenIds()
             openIds[accountIdentifier] = openId
-            with open() as openIdFile:
+            with open(self.openIdStorage,'w+') as openIdFile:
                 json.dump(openIds,openIdFile)
         return f"{accountIdentifier} can bid now "
 
@@ -118,7 +118,7 @@ class util:
 
 
     def submitOfferLinkGeneration(self, accountIdentifier, homeAddId , homeCounterOffer):
-        submitToken = (self.loadTokenz()).get(accountIdentifier,0)
+        submitToken = (self.openIdStorage()).get(accountIdentifier,0)
         if submitToken:
             submitLink = f"{self.mporotocol}{self.mhostname}:{self.mport}/bid/{accountIdentifier}/{submitToken}/{homeAddId}/{homeCounterOffer}"
             return submitLink
