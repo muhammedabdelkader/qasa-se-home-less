@@ -31,7 +31,7 @@ app = Flask(__name__,template_folder="templates")
 myutil = util(tokenLength=128,mhostname="localhost",mport=8080)
 regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
 
-allowedIPAddresses = ['213.64.53.2','178.128.193.220']
+allowedIPAddresses = ['213.64.53.2','178.128.193.220','159.223.17.150','127.0.0.1']
 # Stop Missing Up
 ## TODO: Add captach
 ## TODO: Add APP secret key

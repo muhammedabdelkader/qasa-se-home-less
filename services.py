@@ -108,14 +108,14 @@ class find_home_in_qasa:
             for item in allSearchResults[post]:
                 itemInQ = allSearchResults[post][item]
                 #offerThemHyperLink = self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
-                itemInQ['offerThemHyperLink'] = self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
+                itemInQ['offerThemHyperLink'] = "N/A" #self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
 
 
         return allSearchResults
 
 
 
-    def findMyHome(self,region='se/stockholms_län',limit=100,monthlyRent=10000,minRoomCount=1,minSquareMeters=15,isShared=False,isSenior=False,isStudent=False,type='apartment'):
+    def findMyHome(self,region='se/stockholms_län',limit=100,monthlyRent=12000,minRoomCount=1,minSquareMeters=15,isShared=False,isSenior=False,isStudent=False,type='apartment'):
         keyType = "homeSearch"
         startingOffset = 0
         houses_db = {}
@@ -158,8 +158,9 @@ class find_home_in_qasa:
             for house in results:
                 #Dont get records because there is no news
                 if house['duration']['updatedAt'] <= cnfControl:
-                    startingOffset = totalCount + 1
-                    break
+                    print(cnfControl,'  --- > ',house.get('duration',0).get('updatedAt',0))
+                    #startingOffset = totalCount + 1
+                    continue
                 if house['shared'] == isShared and house['studentHome'] == isStudent and house['seniorHome'] == isSenior and type == house['type']:
                     if not house['duration']['updatedAt'] in houses_db:
                         houses_db[house['duration']['updatedAt']] = {}
