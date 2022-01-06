@@ -36,6 +36,10 @@ class util:
         self.tokenzStorage = "data/tokenz.csv"
         self.openIdStorage = "data/openId.csv"
 
+        # File Storage
+        self.lastUpdateTime = "data/lastUpdaTime.json"
+        self.clientPreferences = "data/clientPref.json"
+
         # Service Settings
         self.serviceName = None
 
@@ -71,10 +75,24 @@ class util:
         return self.token
 
     def loadTokenz(self):
-        tokens = None
-        with open(self.tokenzStorage, 'r+') as alltokens:
-            tokens = json.load(alltokens)
-        return tokens
+        return self.loadJsonFiles(self.tokenzStorage)
+
+    def getLastUpdateTime(self,userAccountIdentifier):
+        return self.loadLastUpdateTime()[userAccountIdentifier]
+
+    def getClientPref(self,userAccountIdentifier):
+        return self.loadClientPref()[userAccountIdentifier]
+
+    def loadClientPref(self):
+        return self.loadJsonFiles(self.clientPreferences)
+    def loadLastUpdateTime(self):
+        return self.loadJsonFiles(self.lastUpdateTime)
+
+    def loadJsonFiles(self,fileName):
+        data = None
+        with open(fileName, 'r+') as allData:
+            data = json.load(allData)
+        return data
 
     def loadOpenIds(self):
         tokens = None
@@ -98,6 +116,12 @@ class util:
         return f"{accountIdentifier} can bid now "
 
     def revokeToken(self,userAccountIdentifier,urToken):
+        '''
+
+        :param userAccountIdentifier:
+        :param urToken:
+        :return:
+        '''
         tokenz = self.loadTokenz()
         if userAccountIdentifier in tokenz and tokenz[userAccountIdentifier]==urToken:
             tokenz.pop(userAccountIdentifier)
@@ -107,6 +131,11 @@ class util:
 
 
     def writeToken(self,userAccountIdentifier):
+        '''
+
+        :param userAccountIdentifier:
+        :return:
+        '''
         tokenz = self.loadTokenz()
         if not userAccountIdentifier in tokenz:
             self.setToken()
@@ -116,6 +145,50 @@ class util:
 
         return tokenz[userAccountIdentifier]
 
+    def setLastUpdatedTime(self,userAccountIdentifier, time):
+        return self.writeLastUpdatedTime(userAccountIdentifier=userAccountIdentifier,time=time)
+
+    def writeLastUpdatedTime(self, userAccountIdentifier, time):
+        '''
+
+        :param userAccountIdentifier:
+        :param time:
+        :return:
+        '''
+
+        return self.writeDataToJson(loadData=self.loadLastUpdateTime(), userAccountIdentifier=userAccountIdentifier,
+                                    setData=time, fileStorage=self.lastUpdateTime)
+    def setClientPref(self,userAccountIdentifier,monthlyRent,minRoomCount,minSquareMeters,region):
+        '''
+        :param userAccountIdentifier:
+        :param monthlyRent:
+        :param minRoomCount:
+        :param minSquareMeters:
+        :param region:
+        :return:
+        '''
+
+        pref={userAccountIdentifier:{"maxMonthlyCost":monthlyRent,"minRoomCount": minRoomCount,"minSquareMeters": minSquareMeters,"areaIdentifier": region}}
+        return self.writeClientPref(userAccountIdentifier=userAccountIdentifier,pref=pref)
+
+
+    def writeClientPref(self, userAccountIdentifier, pref):
+        '''
+
+        :param userAccountIdentifier:
+        :param pref:
+        :return:
+        '''
+        return self.writeDataToJson(loadData=self.loadClientPref(), userAccountIdentifier=userAccountIdentifier,
+                                    setData=pref, fileStorage=self.clientPreferences)
+
+    def writeDataToJson(self,loadData,userAccountIdentifier,setData,fileStorage):
+        tokenz = loadData
+        if not userAccountIdentifier in tokenz:
+            tokenz[userAccountIdentifier] = setData
+            with open(fileStorage, 'w',encoding="UTF-8") as myToken:
+                json.dump(tokenz, myToken)
+        return tokenz[userAccountIdentifier]
 
     def submitOfferLinkGeneration(self, accountIdentifier, homeAddId , homeCounterOffer):
         submitToken = (self.openIdStorage()).get(accountIdentifier,0)
@@ -137,3 +210,8 @@ GG = util()
 GG.submitOfferLinkGeneration("G111@gmail.com","1","1000")
 
 """
+GG = util()
+GG.setClientPref(userAccountIdentifier="mostafa.elnakeb@gmail.com",monthlyRent=11000,minRoomCount=1,minSquareMeters=20,region='se/stockholms_län')
+GG.setLastUpdatedTime(time='2021-12-20T08:35:51Z',userAccountIdentifier='mostafa.elnakeb@gmail.com')
+print(">ClientPref> ",GG.getClientPref(userAccountIdentifier='mostafa.elnakeb@gmail.com'))
+print(">Time> ",GG.getLastUpdateTime(userAccountIdentifier='mostafa.elnakeb@gmail.com'))
