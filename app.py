@@ -81,10 +81,11 @@ def verifyMe(email,token):
 
 @app.route('/sendMeAds/<string:email>/<string:token>',methods=['GET'])
 def doSearching(email,token):
-    if myutil.verifyToken(accountIdentifier=email,assumeToken=token):
+    if True: #myutil.verifyToken(accountIdentifier=email,assumeToken=token):
         myQasa = find_home_in_qasa(my_token=token,local_storage=f"{email}.json",accountIDentifier=email)
-        allSearchResults = myQasa.runSearchFor()
+        allSearchResults = myQasa.runSearchFor(pref=myutil.getClientPref(userAccountIdentifier=f'{email}'),accountIdentifier=email,lastUpdatedTime=myutil.getLastUpdateTime(userAccountIdentifier=f'{email}'))
         if len(allSearchResults):
+            myutil.setLastUpdatedTime(time=myQasa.getLastUpdatedTime(), userAccountIdentifier=email)
             body = render_template('content.html', allSearchResults=allSearchResults, servicename="doSearching")
             myQasa.sendEmailToday(recipients=[email,"muhammed.m.bassem@gmail.com"],subject=f'{datetime.now().strftime("%Y-%m-%d%H:%M:%S")}',body=body)
         return "Check Inbox"

@@ -31,9 +31,14 @@ class find_home_in_qasa:
         self.prefixFileName = f"{str(datetime.today()).split(' ')[0].replace('-', '')}_{str(datetime.timestamp(datetime.now())).replace('.', '')}_"
         self.postfixFileName = ".json"
         self.writeToFile = writeToFile
+        self._myLastUpdateTime = 0
 
     def setMessageBody(self,message):
         self.messageBody = message
+    def getLastUpdatedTime(self):
+        tempValue = self._myLastUpdateTime
+        self._myLastUpdateTime = 0
+        return tempValue
 
     def getMessageBody(self):
         return self.messageBody
@@ -76,8 +81,8 @@ class find_home_in_qasa:
         if len(recipients):
             smtp_ssl_host = 'smtp.gmail.com'  # smtp.mail.yahoo.com
             smtp_ssl_port = 465
-            username = os.environ.get('emailUsername')
-            password = os.environ.get('emailPassword')
+            username = ""
+            password = ""
             sender = 'admin@redactive.io'
             targets = recipients
             msg = MIMEMultipart('alternative')
@@ -98,11 +103,16 @@ class find_home_in_qasa:
     def queryHomesProtocol(self,region='se/stockholms_län'):
         houses_db = self.findMyHome(region)
 
-    def runSearchFor(self):
+    def runSearchFor(self,pref={},accountIdentifier={},lastUpdatedTime=0):
         ##TODO : Search Critria for each accountIDentifier
         ##TODO: Data base graphQL
         # Default Search is running, Later run it inside for loop
-        allSearchResults = self.findMyHome()
+        allSearchResults = None
+        if len(pref) and len(accountIdentifier) and lastUpdatedTime:
+            allSearchResults = self.findMyHome(lastTimeUpated=lastUpdatedTime,region=pref.get('areaIdentifier',None),minRoomCount=pref.get('minRoomCount',None),monthlyRent=pref.get('maxMonthlyCost',None),minSquareMeters=pref.get('minSquareMeters',None),isShared=pref.get('shared',False),homeType=pref.get("homeType",["apartment","loft"]))
+
+        else:
+          allSearchResults = self.findMyHome()
         #for accountIDentifier in self.util.loadTokenz().keys():
         for post in allSearchResults:
             for item in allSearchResults[post]:
@@ -110,19 +120,21 @@ class find_home_in_qasa:
                 #offerThemHyperLink = self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
                 itemInQ['offerThemHyperLink'] = "N/A" #self.util.submitOfferLinkGeneration(self.accountIDentifier,item,itemInQ['Price'])
 
-
         return allSearchResults
 
 
 
-    def findMyHome(self,region='se/stockholms_län',limit=100,monthlyRent=12000,minRoomCount=1,minSquareMeters=15,isShared=False,isSenior=False,isStudent=False,type='apartment'):
+    def findMyHome(self,region=['se/stockholms_län'], homeType= ["apartment","loft"],limit=100,monthlyRent=12000,minRoomCount=1,minSquareMeters=15,isShared=False,isSenior=False,isStudent=False,type='apartment',lastTimeUpated=0):
         keyType = "homeSearch"
         startingOffset = 0
         houses_db = {}
         cnfControl = None
         runnable = True
-        with open(self.updateVersionFileName,'r') as configControl:
-            cnfControl = configControl.read()
+        if not lastTimeUpated:
+            with open(self.updateVersionFileName,'r') as configControl:
+                cnfControl = configControl.read()
+        else:
+            cnfControl = lastTimeUpated
         while True:
             #query = {"operationName":"HomeSearchCoordsQuery","variables":{"filterOnArea":False,"platform":"blocket","searchParams":{"homeType":["apartment","loft"],"areaIdentifier":[f"{region}"]}},"query":"query HomeSearchCoordsQuery($platform: PlatformEnum\u0021, $searchParams: HomeSearchParamsInput, $filterOnArea: Boolean) { homeSearchCoords( platform: $platform  searchParams: $searchParams   filterOnArea: $filterOnArea ) {   filterHomesRaw    __typename  }}"}
             query ={
@@ -131,16 +143,12 @@ class find_home_in_qasa:
                         "limit": limit,
                         "platform": "blocket",
                         "searchParams": {
-                          "homeType": [
-                            "apartment",
-                            "loft"
-                          ],
+                          "homeType": homeType,
                           "maxMonthlyCost": monthlyRent,
                           "minRoomCount": minRoomCount,
                           "minSquareMeters": minSquareMeters,
-                          "areaIdentifier": [
-                            f"{region}"
-                          ]
+                          "areaIdentifier":  region
+
                         },
                         "offset": startingOffset,
                         "order": "DESCENDING",
@@ -158,7 +166,6 @@ class find_home_in_qasa:
             for house in results:
                 #Dont get records because there is no news
                 if house['duration']['updatedAt'] <= cnfControl:
-                    print(cnfControl,'  --- > ',house.get('duration',0).get('updatedAt',0))
                     #startingOffset = totalCount + 1
                     continue
                 if house['shared'] == isShared and house['studentHome'] == isStudent and house['seniorHome'] == isSenior and type == house['type']:
@@ -188,8 +195,11 @@ class find_home_in_qasa:
 
         if len(houses_db):
             houses_db = dict(sorted(houses_db.items(),reverse=True))
-            with open(self.updateVersionFileName, 'w') as lastUpdate:
-                lastUpdate.write(list(houses_db.keys())[0])
+            if not lastTimeUpated:
+                with open(self.updateVersionFileName, 'w') as lastUpdate:
+                    lastUpdate.write(list(houses_db.keys())[0])
+            else:
+                self._myLastUpdateTime = list(houses_db.keys())[0]
 
             if self.writeToFile:
                 self.writeJsonToFile(fileFullPath=f"{self.baseDataLocaion }{keyType}",jsonData=houses_db)

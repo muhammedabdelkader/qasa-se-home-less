@@ -78,10 +78,10 @@ class util:
         return self.loadJsonFiles(self.tokenzStorage)
 
     def getLastUpdateTime(self,userAccountIdentifier):
-        return self.loadLastUpdateTime()[userAccountIdentifier]
+        return self.loadLastUpdateTime().get(userAccountIdentifier,"2021-10-05T13:17:06Z")
 
     def getClientPref(self,userAccountIdentifier):
-        return self.loadClientPref()[userAccountIdentifier]
+        return self.loadClientPref().get(userAccountIdentifier,{userAccountIdentifier:{"maxMonthlyCost": 11000, "minRoomCount": 1, "minSquareMeters": 20, "areaIdentifier": ["se/stockholms_kommun", "se/solna_kommun"]}})
 
     def loadClientPref(self):
         return self.loadJsonFiles(self.clientPreferences)
@@ -168,7 +168,7 @@ class util:
         :return:
         '''
 
-        pref={userAccountIdentifier:{"maxMonthlyCost":monthlyRent,"minRoomCount": minRoomCount,"minSquareMeters": minSquareMeters,"areaIdentifier": region}}
+        pref={"maxMonthlyCost":monthlyRent,"minRoomCount": minRoomCount,"minSquareMeters": minSquareMeters,"areaIdentifier": region}
         return self.writeClientPref(userAccountIdentifier=userAccountIdentifier,pref=pref)
 
 
@@ -184,10 +184,9 @@ class util:
 
     def writeDataToJson(self,loadData,userAccountIdentifier,setData,fileStorage):
         tokenz = loadData
-        if not userAccountIdentifier in tokenz:
-            tokenz[userAccountIdentifier] = setData
-            with open(fileStorage, 'w',encoding="UTF-8") as myToken:
-                json.dump(tokenz, myToken)
+        tokenz[userAccountIdentifier] = setData
+        with open(fileStorage, 'w',encoding="UTF-8") as myToken:
+            json.dump(tokenz, myToken)
         return tokenz[userAccountIdentifier]
 
     def submitOfferLinkGeneration(self, accountIdentifier, homeAddId , homeCounterOffer):
@@ -209,9 +208,12 @@ class util:
 GG = util()
 GG.submitOfferLinkGeneration("G111@gmail.com","1","1000")
 
-"""
 GG = util()
-GG.setClientPref(userAccountIdentifier="mostafa.elnakeb@gmail.com",monthlyRent=11000,minRoomCount=1,minSquareMeters=20,region='se/stockholms_län')
-GG.setLastUpdatedTime(time='2021-12-20T08:35:51Z',userAccountIdentifier='mostafa.elnakeb@gmail.com')
-print(">ClientPref> ",GG.getClientPref(userAccountIdentifier='mostafa.elnakeb@gmail.com'))
-print(">Time> ",GG.getLastUpdateTime(userAccountIdentifier='mostafa.elnakeb@gmail.com'))
+### --  -- ###
+GG.setClientPref(userAccountIdentifier="mostafa.elnakeb@gmail.com",monthlyRent=11000,minRoomCount=1,minSquareMeters=20,region=['se/stockholms_kommun', "se/solna_kommun"])
+GG.setLastUpdatedTime(time='2021-11-20T08:35:51Z',userAccountIdentifier='mostafa.elnakeb@gmail.com')
+### --  -- ###
+print("<ClientPref:> ", GG.getClientPref(userAccountIdentifier='mostafa.elnakeb@gmail.com'))
+print("<Time:> ", GG.getLastUpdateTime(userAccountIdentifier='mostafa.elnakeb@gmail.com'))
+### --  
+"""
