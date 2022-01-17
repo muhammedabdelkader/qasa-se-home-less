@@ -1,1 +1,1 @@
-
+{"<email1Here>": {"maxMonthlyCost": 21000, "minRoomCount": 2, "minSquareMeters": 70, "areaIdentifier": ["se/stockholms_kommun", "se/solna_kommun"]}, "<email2Here>": {"maxMonthlyCost": 9000, "minRoomCount": 1, "minSquareMeters": 20, "homeType": ["apartment", "loft",  "room"], "shared":true,"areaIdentifier": ["se/stockholms_kommun", "se/solna_kommun"]}}
